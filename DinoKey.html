@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dino Key keychain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* VOICE: friendly maker build log, precise like a datasheet
+   IDEA: the keychain itself on a workbench, its OLED glowing
+   PICTURE: a live, touchable keychain running the real firmware logic
+   COLOUR and TYPE: OLED black + pixel cyan, copper accent; Chakra Petch + IBM Plex
+   LAYOUT: dark hero band with device, then parts, wiring, controls, screens, build, code */
+:root{color-scheme:light dark;
+--bg:light-dark(#f3f5f6,#0b0e12);--ink:light-dark(#14181d,#e4ebf0);--soft:light-dark(#4d5863,#9aa7b3);
+--card:light-dark(#ffffff,#131921);--line:light-dark(#dbe2e8,#243040);
+--cyan:light-dark(#00728f,#7fe3ff);--copper:light-dark(#a3541c,#e7a067);--hero:#0d1217;--px:#bfefff}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "IBM Plex Sans",system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:"Chakra Petch",system-ui,sans-serif;line-height:1.05;text-wrap:balance;margin:0}
+h1{font-size:clamp(34px,5vw,52px)}h2{font-size:clamp(26px,3.4vw,34px);margin-bottom:10px}h3{font-size:19px}
+p{margin:0 0 12px;max-width:68ch}
+.band{padding:clamp(28px,4vw,64px) max(5vw,16px)}
+.wrap{max-width:1240px;margin:0 auto}
+.lede{color:var(--soft);margin-bottom:24px}
+pre,.scroll{overflow-x:auto}.scroll a{flex:none}code{overflow-wrap:anywhere;font-family:"IBM Plex Mono",monospace}
+html{scroll-padding-top:72px}
+
+.hero{background:var(--hero);color:#e8f6fb}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:clamp(24px,4vw,56px);align-items:center}
+.hero p{color:#a9bcc6}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.chip{border:1px solid #2a3a46;border-radius:99px;padding:4px 12px;font-size:14px;color:#cfe9f2}
+.device{display:flex;flex-direction:column;align-items:center;gap:16px}
+.key{position:relative;background:#1b232b;border:1px solid #33424f;border-radius:34px;padding:34px 22px 22px;width:min(100%,470px);box-shadow:inset 0 -6px 0 #121920,0 24px 40px -20px #000}
+.key::before{content:"";position:absolute;top:-38px;left:50%;width:54px;height:54px;margin-left:-27px;border:7px solid #8a98a3;border-radius:50%;border-bottom-color:transparent;transform:rotate(45deg)}
+.key::after{content:"";position:absolute;top:12px;left:50%;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:#0d1217;border:1px solid #33424f}
+.glass{background:#000;border-radius:10px;padding:10px;border:1px solid #2b353e}
+canvas.oled{display:block;width:100%;aspect-ratio:2/1;image-rendering:pixelated;background:#000}
+.padrow{display:flex;align-items:center;gap:16px;margin-top:18px}
+#pad{flex:none;width:76px;height:76px;border-radius:50%;border:2px solid #b9512a;background:#d9643a;box-shadow:inset 0 -5px 0 #a6481f;cursor:pointer;touch-action:none;color:#fff;font:600 13px "IBM Plex Sans",sans-serif}
+#pad.on{background:#f08a5d;box-shadow:inset 0 3px 0 #a6481f}
+#pad:focus-visible{outline:3px solid #7fe3ff;outline-offset:3px}
+.padhelp{font-size:14px;color:#a9bcc6;line-height:1.45}
+.padhelp b{color:#fff;font-weight:600}
+#status{font:500 14px "IBM Plex Mono",monospace;color:#7fe3ff}
+
+nav.scroll{display:flex;gap:6px;padding:10px max(5vw,16px);background:var(--card);border-bottom:1px solid var(--line)}
+nav a{color:var(--ink);text-decoration:none;padding:10px 14px;border-radius:8px;font-weight:500}
+nav a:hover{background:var(--bg)}
+@media(min-width:900px){nav.scroll{position:sticky;top:0;z-index:5}}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.part svg{width:100%;height:auto;display:block;margin-bottom:10px;border-radius:8px;background:light-dark(#eef2f4,#0f151b)}
+.part h3{margin-bottom:4px}.part p{font-size:15px;color:var(--soft);margin:0}
+.wiring{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+.wiring svg{display:block;width:100%;min-width:720px;height:auto}
+.note{font-size:15px;color:var(--soft)}
+table{border-collapse:collapse;width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;background:light-dark(#eaf0f3,#18212b)}
+td:first-child{white-space:nowrap;font-weight:500}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:24px}
+.shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.shot{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+.shot .glass{padding:8px}
+.shot h3{margin:12px 2px 4px;font-size:17px}.shot p{font-size:14px;color:var(--soft);margin:0 2px}
+ol.steps{padding-left:22px;max-width:72ch}ol.steps li{margin-bottom:12px}
+.warn{border:1px solid var(--copper);border-radius:12px;padding:14px 16px;background:light-dark(#fbf1ea,#21170f)}
+.warn h3{color:var(--copper);margin-bottom:8px}
+.warn ul{margin:0;padding-left:20px}.warn li{margin-bottom:6px}
+.codehead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+button.copy{min-height:44px;padding:0 18px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:500 15px "IBM Plex Sans",sans-serif;cursor:pointer}
+button.copy:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+pre.code{background:#0d1217;color:#d6e6ee;border-radius:12px;padding:16px;font-size:13px;line-height:1.5;max-height:560px}
+footer{color:var(--soft);font-size:14px}
+@media(max-width:820px){.hero .wrap{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;white-space:normal;font-weight:600}.stack td:empty{display:none}td:first-child{white-space:normal}}
+@media(prefers-reduced-motion:reduce){#pad{transition:none}}
+</style>
+<script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
+</head>
+<body>
+
+<header class="band hero">
+  <div class="wrap">
+    <div>
+      <h1>Dino Key: a touch keychain with a face</h1>
+      <p style="margin-top:16px">A pocket robot built on an ESP32-C3 SuperMini and a 1.3 inch OLED. One touch sensor runs everything: a face that blinks and loves being petted, a clock, a stopwatch and a Dino Run game.</p>
+      <p>Try it here. Press the orange pad (or hold the space bar) like you would touch the real sensor.</p>
+      <div class="chips"><span class="chip">ESP32-C3 SuperMini</span><span class="chip">SH1106 128×64</span><span class="chip">TTP223 touch</span><span class="chip">350 mAh LiPo</span><span class="chip">TP4056</span></div>
+    </div>
+    <div class="device">
+      <div class="key">
+        <div class="glass"><canvas id="live" class="oled" width="128" height="64" aria-label="Live keychain screen"></canvas></div>
+        <div class="padrow">
+          <button id="pad" aria-label="Touch sensor">TOUCH</button>
+          <div class="padhelp"><b>Tap</b> next mode · <b>Double tap</b> action<br><b>Hold</b> pet it or reset · <b>Hold 3 s</b> sleep<br>In Dino Run, every touch jumps</div>
+        </div>
+      </div>
+      <div id="status" aria-live="polite">Mode: HOME</div>
+    </div>
+  </div>
+</header>
+
+<nav class="scroll" aria-label="Sections">
+  <a href="#screens">Screens</a><a href="#parts">Parts</a><a href="#wiring">Wiring</a><a href="#controls">Controls</a><a href="#build">Build steps</a><a href="#code">Code</a>
+</nav>
+
+<section class="band" id="screens"><div class="wrap">
+  <h2>Every screen</h2>
+  <p class="lede">These are drawn with the same shapes and layout as the firmware, at the display's real 128×64 resolution. The time shown is your current time.</p>
+  <div class="shots" id="shots"></div>
+</div></section>
+
+<section class="band" id="parts" style="padding-top:0"><div class="wrap">
+  <h2>Parts</h2>
+  <p class="lede">Six parts, no resistors needed. Drawings are not to scale.</p>
+  <div class="grid" id="partsGrid"></div>
+</div></section>
+
+<section class="band" id="wiring" style="padding-top:0"><div class="wrap">
+  <h2>Wiring</h2>
+  <p class="lede">Only three signal wires. Power uses labelled points: every point with the same label is joined together. Match OLED pins by their printed names, since the order differs between modules.</p>
+  <div class="scroll wiring"><svg viewBox="0 0 900 520" role="img" aria-label="Wiring diagram">
+    <title>Wiring diagram for the Dino Key keychain</title>
+    <defs>
+      <g id="flag5"><rect x="-44" y="-11" width="44" height="22" rx="11" fill="#e07a2c"/><text x="-22" y="5" text-anchor="middle" font-size="12" font-weight="700" fill="#fff" font-family="IBM Plex Sans, Arial, sans-serif">5V</text></g>
+      <g id="flag3"><rect x="-44" y="-11" width="44" height="22" rx="11" fill="#d23b3b"/><text x="-22" y="5" text-anchor="middle" font-size="12" font-weight="700" fill="#fff" font-family="IBM Plex Sans, Arial, sans-serif">3V3</text></g>
+      <g id="flagG"><rect x="-44" y="-11" width="44" height="22" rx="11" fill="#3a434c"/><text x="-22" y="5" text-anchor="middle" font-size="12" font-weight="700" fill="#fff" font-family="IBM Plex Sans, Arial, sans-serif">GND</text></g>
+    </defs>
+    <g font-family="IBM Plex Sans, Arial, sans-serif" font-size="13">
+      <!-- ESP32 -->
+      <rect x="360" y="110" width="180" height="300" rx="10" fill="#1d2a52" stroke="#4a5d94"/>
+      <rect x="425" y="92" width="50" height="26" rx="6" fill="#b9c2c9" stroke="#7d8890"/>
+      <rect x="415" y="250" width="70" height="70" rx="4" fill="#0e1220" stroke="#56628a"/>
+      <text x="450" y="290" text-anchor="middle" fill="#cdd6f0" font-size="11">ESP32-C3</text>
+      <text x="450" y="395" text-anchor="middle" fill="#cdd6f0" font-weight="600">SuperMini</text>
+      <g fill="#e2b25a">
+        <circle cx="360" cy="160" r="6"/><circle cx="360" cy="190" r="6"/><circle cx="360" cy="220" r="6"/><circle cx="360" cy="250" r="6"/><circle cx="360" cy="280" r="6"/><circle cx="360" cy="310" r="6"/><circle cx="360" cy="340" r="6"/><circle cx="360" cy="370" r="6"/>
+        <circle cx="540" cy="160" r="6"/><circle cx="540" cy="190" r="6"/><circle cx="540" cy="220" r="6"/><circle cx="540" cy="250" r="6"/><circle cx="540" cy="280" r="6"/><circle cx="540" cy="310" r="6"/><circle cx="540" cy="340" r="6"/><circle cx="540" cy="370" r="6"/>
+      </g>
+      <g fill="#dfe6fb" font-size="12">
+        <text x="372" y="164">5V</text><text x="372" y="194">GND</text><text x="372" y="224">3V3</text><text x="372" y="254">4</text><text x="372" y="284" font-weight="700">3</text><text x="372" y="314">2</text><text x="372" y="344">1</text><text x="372" y="374">0</text>
+        <g text-anchor="end"><text x="528" y="164">5</text><text x="528" y="194" font-weight="700">6</text><text x="528" y="224" font-weight="700">7</text><text x="528" y="254">8</text><text x="528" y="284">9</text><text x="528" y="314">10</text><text x="528" y="344">20</text><text x="528" y="374">21</text></g>
+      </g>
+      <!-- ESP power flags -->
+      <path d="M354 160H318M354 190H318M354 220H318" stroke="#8a96a0" stroke-width="3"/>
+      <use href="#flag5" x="318" y="160"/><use href="#flagG" x="318" y="190"/><use href="#flag3" x="318" y="220"/>
+
+      <!-- OLED -->
+      <rect x="620" y="20" width="240" height="150" rx="8" fill="#16324f" stroke="#3d6389"/>
+      <rect x="640" y="36" width="200" height="100" rx="3" fill="#000"/>
+      <text x="740" y="92" text-anchor="middle" fill="#7fe3ff" font-family="Chakra Petch, Arial, sans-serif" font-size="18">1.3" OLED</text>
+      <g fill="#e2b25a"><circle cx="660" cy="160" r="6"/><circle cx="700" cy="160" r="6"/><circle cx="740" cy="160" r="6"/><circle cx="780" cy="160" r="6"/></g>
+      <g fill="#dfe6fb" font-size="11" text-anchor="middle"><text x="660" y="150">SDA</text><text x="700" y="150">SCL</text><text x="740" y="150">VCC</text><text x="780" y="150">GND</text></g>
+      <path d="M660 166V190H546" fill="none" stroke="#2f7dd6" stroke-width="4"/>
+      <path d="M700 166V220H546" fill="none" stroke="#1e9e5a" stroke-width="4"/>
+      <text x="556" y="183" fill="#2f7dd6" font-weight="600">SDA → GPIO 6</text>
+      <text x="556" y="240" fill="#1e9e5a" font-weight="600">SCL → GPIO 7</text>
+      <path d="M740 166V196M780 166V236" stroke="#8a96a0" stroke-width="3"/>
+      <use href="#flag3" x="762" y="207"/><use href="#flagG" x="802" y="247"/>
+
+      <!-- Touch -->
+      <rect x="60" y="230" width="160" height="100" rx="8" fill="#b8352f" stroke="#7e2420"/>
+      <circle cx="120" cy="280" r="32" fill="#e6c59a" stroke="#a8875e" stroke-width="2"/>
+      <text x="120" y="345" text-anchor="middle" fill="currentColor" font-weight="600" class="lbl">Touch sensor TTP223</text>
+      <g fill="#e2b25a"><circle cx="220" cy="250" r="6"/><circle cx="220" cy="280" r="6"/><circle cx="220" cy="310" r="6"/></g>
+      <g fill="#ffe1dc" font-size="11" text-anchor="end"><text x="208" y="254">VCC</text><text x="208" y="284">I/O</text><text x="208" y="314">GND</text></g>
+      <path d="M226 280H354" stroke="#8b4fd1" stroke-width="4"/>
+      <text x="296" y="273" fill="#8b4fd1" font-weight="600">GPIO 3</text>
+      <path d="M226 250H246M226 310H246" stroke="#8a96a0" stroke-width="3"/>
+      <use href="#flag3" x="290" y="250"/><use href="#flagG" x="290" y="310"/>
+
+      <!-- TP4056 -->
+      <rect x="40" y="365" width="200" height="60" rx="6" fill="#1f4f8f" stroke="#3e72b8"/>
+      <rect x="26" y="380" width="24" height="30" rx="4" fill="#b9c2c9" stroke="#7d8890"/>
+      <text x="140" y="400" text-anchor="middle" fill="#e5efff" font-weight="600">TP4056 charger</text>
+      <g fill="#e2b25a"><circle cx="240" cy="380" r="6"/><circle cx="240" cy="410" r="6"/><circle cx="90" cy="425" r="6"/><circle cx="150" cy="425" r="6"/></g>
+      <g fill="#e5efff" font-size="11" text-anchor="end"><text x="230" y="384">OUT+</text><text x="230" y="414">OUT−</text></g>
+      <g fill="#e5efff" font-size="11" text-anchor="middle"><text x="90" y="418">B+</text><text x="150" y="418">B−</text></g>
+      <!-- battery -->
+      <rect x="50" y="460" width="160" height="50" rx="8" fill="#c7ced4" stroke="#8b959d"/>
+      <text x="130" y="490" text-anchor="middle" fill="#2b333a" font-weight="600">LiPo 3.7 V 350 mAh</text>
+      <path d="M90 431V460" stroke="#d23b3b" stroke-width="4"/><path d="M150 431V460" stroke="#222" stroke-width="4"/>
+      <!-- switch -->
+      <rect x="300" y="440" width="70" height="30" rx="4" fill="#24292e" stroke="#555"/>
+      <rect x="312" y="446" width="22" height="18" rx="3" fill="#cfd6dc"/>
+      <text x="335" y="490" text-anchor="middle" fill="currentColor" font-size="12" class="lbl">Slide switch</text>
+      <path d="M246 380H280V455H300" fill="none" stroke="#e07a2c" stroke-width="4"/>
+      <path d="M370 455H420" stroke="#e07a2c" stroke-width="4"/>
+      <use href="#flag5" x="464" y="455"/>
+      <path d="M246 410H250V438" fill="none" stroke="#8a96a0" stroke-width="3"/>
+      <use href="#flagG" x="272" y="449"/>
+    </g>
+  </svg></div>
+  <p class="note" style="margin-top:12px">Power path: battery → charger B+/B− → charger OUT+ → slide switch → ESP32 5V. The ESP32's 3V3 pin then powers the OLED and the touch sensor.</p>
+  <div class="two" style="margin-top:20px">
+    <table class="stack"><thead><tr><th>From</th><th>To</th></tr></thead><tbody id="wireRows"></tbody></table>
+    <div class="warn">
+      <h3>Before you switch it on</h3>
+      <ul>
+        <li>Check the battery's red and black wires twice. Reversed, they can kill the charger and the ESP32.</li>
+        <li>Turn the slide switch <b>off</b> before plugging USB into the ESP32 to upload code.</li>
+        <li>Charge through the charger module's own USB port.</li>
+        <li>If the charger has only B+/B− pads, take OUT+/OUT− from them instead.</li>
+        <li>Never connect the battery straight to a GPIO pin. It is 4.2 V when full; the pins take 3.3 V.</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section class="band" id="controls" style="padding-top:0"><div class="wrap">
+  <h2>One sensor, every control</h2>
+  <p class="lede">Modes go in this order: Home → Clock → Stopwatch → Dino Run → Faces → Battery.</p>
+  <table class="stack"><thead><tr><th>Touch</th><th>Home / Faces</th><th>Stopwatch</th><th>Dino Run</th><th>Other modes</th></tr></thead><tbody>
+    <tr><td>Tap</td><td>Next mode</td><td>Next mode</td><td>Next mode (when not playing)</td><td>Next mode</td></tr>
+    <tr><td>Double tap</td><td>Next face</td><td>Start / pause</td><td>Start game</td><td>Blink</td></tr>
+    <tr><td>Hold 0.6 s</td><td>Pet it: heart eyes, blush, floating hearts</td><td>Reset to 00:00</td><td>—</td><td>—</td></tr>
+    <tr><td>Hold 3 s</td><td>Sleep</td><td>Sleep (stops the stopwatch)</td><td>Sleep</td><td>Sleep</td></tr>
+    <tr><td>Any touch</td><td>—</td><td>—</td><td>Jump, while playing</td><td>—</td></tr>
+  </tbody></table>
+  <p class="note" style="margin-top:12px">It auto-sleeps after 3 minutes without a touch (not while the stopwatch runs or a game is on). Leave it alone on Home for a minute and it looks sad. After petting, it laughs for 3 seconds.</p>
+</div></section>
+
+<section class="band" id="build" style="padding-top:0"><div class="wrap two">
+  <div>
+    <h2>Build steps</h2>
+    <ol class="steps">
+      <li>Install <b>Arduino IDE</b>. In Boards Manager, install <b>esp32 by Espressif</b>.</li>
+      <li>In Library Manager, install <b>U8g2</b> by olikraus.</li>
+      <li>Before soldering anything, connect only the ESP32 by USB and upload the code once to check that it works.</li>
+      <li>Solder the OLED: VCC→3V3, GND→GND, SDA→GPIO 6, SCL→GPIO 7.</li>
+      <li>Solder the touch sensor: VCC→3V3, GND→GND, I/O→GPIO 3.</li>
+      <li>Solder the battery to the charger's B+/B−, then OUT+ → switch → ESP32 5V, OUT− → ESP32 GND.</li>
+      <li>Put your Wi-Fi name and password at the top of the code and upload with the switch off. It fetches the time once at power-on.</li>
+      <li>Switch on, test every mode, then fit it in a case: the OLED on the front, the touch pad under a thin wall (it senses through about 2 mm of plastic).</li>
+    </ol>
+  </div>
+  <div>
+    <h2>Upload settings and fixes</h2>
+    <table class="stack"><thead><tr><th>Setting</th><th>Value</th></tr></thead><tbody>
+      <tr><td>Board</td><td>ESP32C3 Dev Module</td></tr>
+      <tr><td>USB CDC On Boot</td><td>Enabled</td></tr>
+      <tr><td>Library</td><td>U8g2</td></tr>
+      <tr><td>Time zone</td><td>IST-5:30 (change TZ_INFO for others)</td></tr>
+    </tbody></table>
+    <table class="stack" style="margin-top:16px"><thead><tr><th>Problem</th><th>Fix</th></tr></thead><tbody>
+      <tr><td>Screen garbled or shifted</td><td>Your OLED may be SSD1306: change SH1106 to SSD1306 in the U8G2 line.</td></tr>
+      <tr><td>Touch works backwards</td><td>The sensor is active-low: bridge its "A" pad.</td></tr>
+      <tr><td>Clock shows --:--</td><td>Wi-Fi name or password wrong; it uses 2.4 GHz only.</td></tr>
+      <tr><td>Upload fails</td><td>Hold BOOT, tap RESET, release BOOT, upload again.</td></tr>
+      <tr><td>Want battery %</td><td>Add two equal resistors (10k–470k): battery+ → R → GPIO 1 → R → GND, set HAS_BAT_SENSE to 1.</td></tr>
+    </tbody></table>
+  </div>
+</div></section>
+
+<section class="band" id="code" style="padding-top:0"><div class="wrap">
+  <div class="codehead"><h2 style="margin:0">Full code</h2><button class="copy" id="copyBtn">Copy code</button></div>
+  <p class="lede">DinoKey.ino, ready for Arduino IDE. Save it in a folder named DinoKey.</p>
+  <pre class="code"><code id="codeText">/*
+  DINO KEY - touch keychain with a face
+  ESP32-C3 SuperMini + 1.3&quot; SH1106 OLED (I2C) + TTP223 touch sensor
+  + 350 mAh LiPo + TP4056 charger + slide switch
+
+  Modes:  HOME -&gt; CLOCK -&gt; STOPWATCH -&gt; DINO -&gt; FACES -&gt; BATTERY -&gt; HOME ...
+
+  Touch controls
+    Tap              -&gt; next mode
+    Double tap       -&gt; action:  HOME/FACES = next face
+                                 STOPWATCH  = start / stop
+                                 DINO       = start game
+    Hold (0.6 s)     -&gt; HOME/FACES = pet it (hearts!)   STOPWATCH = reset
+    Hold 3 s         -&gt; sleep  (touch again to wake)
+    In DINO game     -&gt; every touch = jump
+  Auto-sleep after 3 minutes with no touch (not while stopwatch runs).
+  Ignore it for 1 minute on HOME and it gets sad.
+
+  Library needed: &quot;U8g2&quot; by olikraus (Arduino Library Manager)
+  Board: &quot;ESP32C3 Dev Module&quot;, USB CDC On Boot: Enabled
+*/
+
+#include &lt;Arduino.h&gt;
+#include &lt;U8g2lib.h&gt;
+#include &lt;WiFi.h&gt;
+#include &lt;time.h&gt;
+#include &quot;esp_sleep.h&quot;
+
+// ------------------------- USER SETTINGS -------------------------
+const char* WIFI_SSID = &quot;YourWiFiName&quot;;      // used once at power-on to get the time
+const char* WIFI_PASS = &quot;YourWiFiPassword&quot;;
+const char* TZ_INFO   = &quot;IST-5:30&quot;;          // India. Change for other time zones.
+
+#define HAS_BAT_SENSE 0   // 1 = you wired the 2-resistor divider to PIN_BAT, 0 = no resistors
+#define PIN_SDA    6
+#define PIN_SCL    7
+#define PIN_TOUCH  3      // TTP223 OUT (HIGH when touched)
+#define PIN_BAT    1      // battery + through two equal resistors (10k-470k)
+#define PIN_USB    -1     // optional: charger 5V through two equal resistors to GPIO 4 (-1 = not used)
+#define BAT_DIVIDER 2.0   // (R1+R2)/R2 - tweak if your % reads wrong
+
+const uint32_t AUTO_SLEEP_MS = 3UL * 60UL * 1000UL;
+const uint32_t LONELY_MS     = 60UL * 1000UL;
+// -----------------------------------------------------------------
+
+U8G2_SH1106_128X64_NONAME_F_HW_I2C oled(U8G2_R0, U8X8_PIN_NONE, PIN_SCL, PIN_SDA);
+
+enum Mode { M_HOME, M_CLOCK, M_STOPWATCH, M_DINO, M_FACES, M_BATTERY, MODE_COUNT };
+const char* MODE_NAMES[] = { &quot;HOME&quot;, &quot;CLOCK&quot;, &quot;STOPWATCH&quot;, &quot;DINO RUN&quot;, &quot;FACES&quot;, &quot;BATTERY&quot; };
+
+// kept across deep sleep
+RTC_DATA_ATTR int      mode = M_HOME;
+RTC_DATA_ATTR int      faceIdx = 1;
+RTC_DATA_ATTR uint32_t dinoBest = 0;
+RTC_DATA_ATTR uint32_t petCount = 0;
+
+uint32_t lastActivity = 0, lastBatRead = 0, modeBannerUntil = 0, happyUntil = 0;
+
+// ------------------------- FACES -------------------------
+enum Eye   { E_OPEN, E_CLOSED, E_HAPPY, E_SAD, E_ANGRY, E_HEART, E_X, E_ROUND, E_SHADES, E_SLEEPY };
+enum Mouth { MO_NONE, MO_SMILE, MO_FROWN, MO_FLAT, MO_O, MO_GRIN };
+
+struct Face { const char* name; uint8_t eyeL, eyeR, mouth; };
+const Face FACES[] = {
+  { &quot;Neutral&quot;,   E_OPEN,   E_OPEN,   MO_FLAT  },
+  { &quot;Happy&quot;,     E_HAPPY,  E_HAPPY,  MO_SMILE },
+  { &quot;Excited&quot;,   E_ROUND,  E_ROUND,  MO_GRIN  },
+  { &quot;Wink&quot;,      E_OPEN,   E_CLOSED, MO_SMILE },
+  { &quot;Laugh&quot;,     E_HAPPY,  E_HAPPY,  MO_GRIN  },
+  { &quot;Sleepy&quot;,    E_SLEEPY, E_SLEEPY, MO_FLAT  },
+  { &quot;Surprised&quot;, E_ROUND,  E_ROUND,  MO_O     },
+  { &quot;Sad&quot;,       E_SAD,    E_SAD,    MO_FROWN },
+  { &quot;Angry&quot;,     E_ANGRY,  E_ANGRY,  MO_FROWN },
+  { &quot;Love&quot;,      E_HEART,  E_HEART,  MO_SMILE },
+  { &quot;Cool&quot;,      E_SHADES, E_SHADES, MO_SMILE },
+  { &quot;Error&quot;,     E_X,      E_X,      MO_FLAT  },
+  { &quot;Sleeping&quot;,  E_CLOSED, E_CLOSED, MO_NONE  },
+};
+const int FACE_COUNT = sizeof(FACES) / sizeof(FACES[0]);
+const int FACE_LAUGH = 4, FACE_SLEEPY = 5, FACE_SAD = 7, FACE_LOVE = 9, FACE_SLEEPING = FACE_COUNT - 1;
+
+bool     blinking = false;
+uint32_t nextBlinkAt = 0, blinkEndAt = 0;
+
+void drawEye(uint8_t type, int cx, int cy, int ew, int eh, int side /* -1 left, +1 right */) {
+  int left = cx - ew / 2, top = cy - eh / 2;
+  int innerX = cx - side * ew / 2, outerX = cx + side * ew / 2;
+  if (blinking &amp;&amp; (type == E_OPEN || type == E_ROUND || type == E_SAD || type == E_ANGRY)) type = E_CLOSED;
+
+  switch (type) {
+    case E_OPEN:
+      oled.drawRBox(left, top, ew, eh, max(1, min(ew, eh) / 4));
+      break;
+    case E_CLOSED:
+      oled.drawBox(left, cy, ew, 3);
+      break;
+    case E_HAPPY:   // ^ ^
+      for (int i = 0; i &lt; 3; i++) {
+        oled.drawLine(left, cy + eh / 4 + i, cx, cy - eh / 4 + i);
+        oled.drawLine(cx, cy - eh / 4 + i, left + ew, cy + eh / 4 + i);
+      }
+      break;
+    case E_SAD:
+    case E_ANGRY:
+      oled.drawRBox(left, top, ew, eh, max(1, min(ew, eh) / 4));
+      oled.setDrawColor(0);
+      if (type == E_SAD) oled.drawTriangle(innerX, top - 1, outerX + side, top - 1, outerX + side, top + eh / 2);
+      else               oled.drawTriangle(outerX, top - 1, innerX - side, top - 1, innerX - side, top + eh / 2);
+      oled.setDrawColor(1);
+      break;
+    case E_SLEEPY:
+      oled.drawRBox(left, top, ew, eh, max(1, min(ew, eh) / 4));
+      oled.setDrawColor(0);
+      oled.drawBox(left - 1, top - 1, ew + 2, eh / 2 + 1);
+      oled.setDrawColor(1);
+      break;
+    case E_HEART: {
+      int r = max(2, ew / 4);
+      oled.drawDisc(cx - r, cy - r / 2, r);
+      oled.drawDisc(cx + r, cy - r / 2, r);
+      oled.drawTriangle(cx - 2 * r - 1, cy - r / 2 + 1, cx + 2 * r + 1, cy - r / 2 + 1, cx, cy + eh / 2);
+      break;
+    }
+    case E_X:
+      for (int d = -1; d &lt;= 1; d++) {
+        oled.drawLine(left + d, top, left + ew + d, top + eh);
+        oled.drawLine(left + ew + d, top, left + d, top + eh);
+      }
+      break;
+    case E_ROUND: {
+      int r = min(ew, eh) / 2;
+      oled.drawDisc(cx, cy, r);
+      oled.setDrawColor(0);
+      oled.drawDisc(cx + r / 3, cy - r / 3, max(1, r / 3));   // shine
+      oled.setDrawColor(1);
+      break;
+    }
+    case E_SHADES:
+      oled.drawBox(left - 2, cy - eh / 4, ew + 4, eh / 2 + 2);
+      break;
+  }
+}
+
+void drawMouth(uint8_t type, int cx, int cy, int mw) {
+  int rx = max(2, mw / 2), ry = max(2, mw / 4);
+  switch (type) {
+    case MO_SMILE:
+      oled.drawEllipse(cx, cy, rx, ry, U8G2_DRAW_LOWER_LEFT | U8G2_DRAW_LOWER_RIGHT);
+      oled.drawEllipse(cx, cy + 1, rx, ry, U8G2_DRAW_LOWER_LEFT | U8G2_DRAW_LOWER_RIGHT);
+      break;
+    case MO_FROWN:
+      oled.drawEllipse(cx, cy + ry, rx, ry, U8G2_DRAW_UPPER_LEFT | U8G2_DRAW_UPPER_RIGHT);
+      oled.drawEllipse(cx, cy + ry + 1, rx, ry, U8G2_DRAW_UPPER_LEFT | U8G2_DRAW_UPPER_RIGHT);
+      break;
+    case MO_FLAT:
+      oled.drawBox(cx - mw / 3, cy + 1, 2 * mw / 3, 2);
+      break;
+    case MO_O:
+      oled.drawFilledEllipse(cx, cy + 2, max(2, mw / 5), ry + 1);
+      break;
+    case MO_GRIN:
+      oled.drawFilledEllipse(cx, cy, rx, ry + 2, U8G2_DRAW_LOWER_LEFT | U8G2_DRAW_LOWER_RIGHT);
+      break;
+  }
+}
+
+void drawSmallHeart(int x, int y) {
+  oled.drawDisc(x - 2, y, 2);
+  oled.drawDisc(x + 2, y, 2);
+  oled.drawTriangle(x - 4, y + 1, x + 4, y + 1, x, y + 5);
+}
+
+// draws a face inside the box (ox, oy, W, H)
+void drawFace(int idx, int ox, int oy, int W, int H, bool blush = false) {
+  const Face&amp; f = FACES[idx];
+  int ew = W * 20 / 100, eh = H * 40 / 100;
+  int ey = oy + H * 38 / 100;
+  int exL = ox + W / 2 - W * 22 / 100, exR = ox + W / 2 + W * 22 / 100;
+  drawEye(f.eyeL, exL, ey, ew, eh, -1);
+  drawEye(f.eyeR, exR, ey, ew, eh, +1);
+  if (f.eyeL == E_SHADES) oled.drawBox(exL + ew / 2, ey - eh / 4, exR - exL - ew, 2);  // glasses bridge
+  drawMouth(f.mouth, ox + W / 2, oy + H * 72 / 100, W * 18 / 100);
+  if (blush) {                                                         // ///  ///
+    int by = ey + eh / 2 + 3;
+    for (int i = 0; i &lt; 3; i++) {
+      oled.drawLine(exL - ew / 2 - 4 + i * 4, by + 3, exL - ew / 2 - 2 + i * 4, by);
+      oled.drawLine(exR + ew / 2 - 6 + i * 4, by + 3, exR + ew / 2 - 4 + i * 4, by);
+    }
+  }
+  if (idx == FACE_SLEEPING) {
+    oled.setFont(u8g2_font_6x10_tf);
+    oled.drawStr(ox + W - 22, oy + 12, &quot;z&quot;);
+    oled.drawStr(ox + W - 14, oy + 8, &quot;Z&quot;);
+  }
+}
+
+void updateBlink() {
+  uint32_t t = millis();
+  if (!blinking &amp;&amp; t &gt;= nextBlinkAt) { blinking = true; blinkEndAt = t + 140; }
+  if (blinking &amp;&amp; t &gt;= blinkEndAt) { blinking = false; nextBlinkAt = t + random(2500, 6000); }
+}
+
+// ------------------------- BATTERY -------------------------
+float batV = 0; int batPct = 0; bool usbIn = false;
+
+int voltsToPercent(float v) {
+  const float tbl[][2] = { {4.20,100},{4.10,90},{4.00,80},{3.90,65},{3.80,50},
+                           {3.70,35},{3.60,20},{3.50,10},{3.40,5},{3.30,0} };
+  if (v &gt;= tbl[0][0]) return 100;
+  for (int i = 1; i &lt; 10; i++)
+    if (v &gt;= tbl[i][0])
+      return tbl[i][1] + (v - tbl[i][0]) * (tbl[i-1][1] - tbl[i][1]) / (tbl[i-1][0] - tbl[i][0]);
+  return 0;
+}
+
+void readBattery() {
+  usbIn = false;
+#if PIN_USB &gt;= 0
+  usbIn = digitalRead(PIN_USB);
+#endif
+  if (!HAS_BAT_SENSE) { batPct = -1; return; }   // no sensor wired
+  uint32_t sum = 0;
+  for (int i = 0; i &lt; 16; i++) sum += analogReadMilliVolts(PIN_BAT);
+  float v = (sum / 16.0f) * BAT_DIVIDER / 1000.0f;
+  batV = (batV == 0) ? v : batV * 0.8f + v * 0.2f;   // smooth
+  batPct = voltsToPercent(batV);
+}
+
+void drawBatteryIcon(int x, int y, int w, int h, int pct) {
+  oled.drawFrame(x, y, w, h);
+  oled.drawBox(x + w, y + h / 4, 2, h / 2);
+  int fill = (w - 4) * pct / 100;
+  if (fill &gt; 0) oled.drawBox(x + 2, y + 2, fill, h - 4);
+}
+
+// ------------------------- TIME -------------------------
+bool timeValid() { time_t n = time(nullptr); return n &gt; 1700000000; }
+
+void syncTimeWiFi() {
+  oled.clearBuffer();
+  oled.setFont(u8g2_font_6x10_tf);
+  oled.drawStr(10, 30, &quot;Syncing time...&quot;);
+  oled.sendBuffer();
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  uint32_t t0 = millis();
+  while (WiFi.status() != WL_CONNECTED &amp;&amp; millis() - t0 &lt; 10000) delay(200);
+  if (WiFi.status() == WL_CONNECTED) {
+    configTzTime(TZ_INFO, &quot;pool.ntp.org&quot;, &quot;time.google.com&quot;);
+    t0 = millis();
+    while (!timeValid() &amp;&amp; millis() - t0 &lt; 8000) delay(200);
+  }
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_OFF);          // save battery
+}
+
+// ------------------------- TOUCH -------------------------
+enum Gesture { G_NONE, G_PRESS, G_TAP, G_DOUBLE, G_HOLD_START, G_HOLD_END, G_SLEEP };
+bool touchHeld = false;          // true while a hold (&gt; 0.6 s) is going on
+
+Gesture readTouch() {
+  static bool last = false, holdFired = false, sleepFired = false;
+  static uint32_t downAt = 0, lastUp = 0;
+  static uint8_t taps = 0;
+  bool now = digitalRead(PIN_TOUCH);
+  uint32_t t = millis();
+  Gesture g = G_NONE;
+
+  if (now &amp;&amp; !last) { downAt = t; holdFired = sleepFired = false; g = G_PRESS; }
+  else if (now &amp;&amp; !holdFired &amp;&amp; t - downAt &gt; 600) { holdFired = true; taps = 0; touchHeld = true; g = G_HOLD_START; }
+  else if (now &amp;&amp; holdFired &amp;&amp; !sleepFired &amp;&amp; t - downAt &gt; 3000) { sleepFired = true; g = G_SLEEP; }
+  else if (!now &amp;&amp; last) {
+    if (holdFired) { touchHeld = false; g = G_HOLD_END; }
+    else if (t - downAt &gt; 30) { taps++; lastUp = t; }
+  }
+  else if (taps &amp;&amp; !now &amp;&amp; t - lastUp &gt; 300) { g = (taps &gt;= 2) ? G_DOUBLE : G_TAP; taps = 0; }
+  last = now;
+  return g;
+}
+
+// ------------------------- SLEEP -------------------------
+void goToSleep() {
+  oled.clearBuffer();
+  drawFace(FACE_SLEEPING, 0, 0, 128, 64);
+  oled.sendBuffer();
+  delay(1000);
+  while (digitalRead(PIN_TOUCH)) delay(10);     // wait for finger release
+  oled.setPowerSave(1);
+  esp_deep_sleep_enable_gpio_wakeup(1ULL &lt;&lt; PIN_TOUCH, ESP_GPIO_WAKEUP_GPIO_HIGH);
+  esp_deep_sleep_start();
+}
+
+// ------------------------- PET IT -------------------------
+// which face to show right now, based on mood
+int moodFace(bool allowLonely) {
+  uint32_t t = millis();
+  if (touchHeld) return FACE_LOVE;                               // being petted
+  if (t &lt; happyUntil) return FACE_LAUGH;                         // just petted
+  if (usbIn) return FACE_LAUGH;                                  // charging
+  if (batPct &gt;= 0 &amp;&amp; batPct &lt; 15) return FACE_SLEEPY;            // low battery
+  if (allowLonely &amp;&amp; t - lastActivity &gt; LONELY_MS) return FACE_SAD;  // ignored
+  return faceIdx;
+}
+
+void drawPetHearts(int ox, int oy, int W, int H) {
+  if (!touchHeld) return;
+  uint32_t t = millis();
+  const int xs[3] = { ox + 8, ox + W - 9, ox + W - 24 };
+  for (int i = 0; i &lt; 3; i++) {
+    int phase = (t / 25 + i * 17) % H;
+    int y = oy + H - 6 - phase;
+    if (y &gt; oy + 2) drawSmallHeart(xs[i], y);
+  }
+}
+
+// ------------------------- STOPWATCH -------------------------
+bool swRunning = false;
+uint32_t swStart = 0, swElapsed = 0;
+
+uint32_t swTime() { return swElapsed + (swRunning ? millis() - swStart : 0); }
+void swToggle() {
+  if (swRunning) { swElapsed += millis() - swStart; swRunning = false; }
+  else           { swStart = millis(); swRunning = true; }
+}
+void swReset() { swRunning = false; swElapsed = 0; }
+
+// ------------------------- DINO RUN -------------------------
+const int GROUND_Y = 56, DINO_X = 10, DINO_W = 11, DINO_H = 11;
+bool dinoPlaying = false;
+uint32_t dinoScore = 0, dinoOverAt = 0, dinoLastFrame = 0;
+float dinoY = 0, dinoVy = 0, dinoDist = 0, groundShift = 0;
+struct Cactus { float x; int w, h; };
+Cactus cacti[2];
+
+float dinoSpeed() { return min(160.0f, 60.0f + dinoScore * 0.15f); }
+
+void placeCactus(int i, float afterX) {
+  cacti[i].x = afterX + dinoSpeed() * 0.6f + random(25, 75);
+  cacti[i].w = random(4, 8);
+  cacti[i].h = random(8, 15);
+}
+
+void dinoStart() {
+  dinoPlaying = true; dinoScore = 0; dinoDist = 0;
+  dinoY = 0; dinoVy = 0;
+  cacti[0].x = 0; placeCactus(0, 100);
+  placeCactus(1, cacti[0].x);
+  dinoLastFrame = millis();
+}
+
+void dinoJump() { if (dinoY == 0) dinoVy = 230; }
+
+void dinoUpdate() {
+  uint32_t t = millis();
+  float dt = (t - dinoLastFrame) / 1000.0f;
+  if (dt &gt; 0.05f) dt = 0.05f;
+  dinoLastFrame = t;
+
+  // jump physics (dinoY = height above ground)
+  if (dinoY &gt; 0 || dinoVy &gt; 0) {
+    dinoVy -= 900 * dt;
+    dinoY += dinoVy * dt;
+    if (dinoY &lt;= 0) { dinoY = 0; dinoVy = 0; }
+  }
+  float sp = dinoSpeed();
+  dinoDist += sp * dt;
+  dinoScore = dinoDist / 5;
+  groundShift += sp * dt;
+
+  for (int i = 0; i &lt; 2; i++) {
+    cacti[i].x -= sp * dt;
+    if (cacti[i].x + cacti[i].w &lt; 0) placeCactus(i, max(cacti[0].x, cacti[1].x));
+    // collision (shrink dino box by 2 px to be fair)
+    int dTop = GROUND_Y - DINO_H - (int)dinoY + 2, dBot = GROUND_Y - (int)dinoY;
+    int cTop = GROUND_Y - cacti[i].h;
+    if (DINO_X + 2 &lt; cacti[i].x + cacti[i].w &amp;&amp; DINO_X + DINO_W - 2 &gt; cacti[i].x &amp;&amp; dBot &gt; cTop &amp;&amp; dTop &lt; GROUND_Y) {
+      dinoPlaying = false; dinoOverAt = t;
+      if (dinoScore &gt; dinoBest) dinoBest = dinoScore;
+    }
+  }
+}
+
+void drawDino(int x, int y, bool running) {        // y = top
+  oled.drawBox(x + 5, y, 6, 4);                    // head
+  oled.setDrawColor(0); oled.drawPixel(x + 9, y + 1); oled.setDrawColor(1);  // eye
+  oled.drawBox(x + 2, y + 3, 6, 6);                // body
+  oled.drawBox(x, y + 4, 2, 2);                    // tail
+  oled.drawPixel(x + 8, y + 5);                    // arm
+  bool step = running &amp;&amp; ((millis() / 100) % 2);
+  oled.drawBox(x + 3, y + 9, 2, step ? 1 : 2);     // legs
+  oled.drawBox(x + 6, y + 9, 2, step ? 2 : 1);
+}
+
+void drawCactus(const Cactus&amp; c) {
+  int x = (int)c.x;
+  oled.drawBox(x, GROUND_Y - c.h, c.w, c.h);
+  if (c.h &gt; 10) {                                  // little arms
+    oled.drawBox(x - 2, GROUND_Y - c.h + 4, 2, 3);
+    oled.drawBox(x + c.w, GROUND_Y - c.h + 2, 2, 3);
+  }
+}
+
+void screenDino() {
+  char buf[24];
+  oled.drawHLine(0, GROUND_Y, 128);
+  for (int gx = -((int)groundShift % 16); gx &lt; 128; gx += 16) oled.drawPixel(gx + 5, GROUND_Y + 3);
+
+  oled.setFont(u8g2_font_5x7_tf);
+  snprintf(buf, sizeof buf, &quot;HI %05lu  %05lu&quot;, (unsigned long)dinoBest, (unsigned long)dinoScore);
+  oled.drawStr(128 - oled.getStrWidth(buf) - 1, 7, buf);
+
+  if (dinoPlaying) {
+    drawDino(DINO_X, GROUND_Y - DINO_H - (int)dinoY, dinoY == 0);
+    for (int i = 0; i &lt; 2; i++) if (cacti[i].x &lt; 128) drawCactus(cacti[i]);
+  } else {
+    drawDino(DINO_X, GROUND_Y - DINO_H, false);
+    oled.setFont(u8g2_font_7x14B_tf);
+    const char* title = dinoOverAt ? &quot;GAME OVER&quot; : &quot;DINO RUN&quot;;
+    oled.drawStr((128 - oled.getStrWidth(title)) / 2, 28, title);
+    oled.setFont(u8g2_font_5x7_tf);
+    const char* hint = &quot;2x tap: play&quot;;
+    oled.drawStr((128 - oled.getStrWidth(hint)) / 2, 42, hint);
+  }
+}
+
+// ------------------------- SCREENS -------------------------
+void screenHome() {
+  // top bar: time + date (+ battery), then divider line
+  oled.setFont(u8g2_font_6x10_tf);
+  char buf[24];
+  if (timeValid()) { time_t n = time(nullptr); strftime(buf, sizeof buf, &quot;%I:%M %p&quot;, localtime(&amp;n)); }
+  else strcpy(buf, &quot;--:--&quot;);
+  oled.drawStr(2, 9, buf);
+
+  int rightEdge = 126;
+  if (batPct &gt;= 0) { drawBatteryIcon(106, 2, 18, 8, batPct); rightEdge = 102; }
+  if (usbIn) { oled.drawStr(rightEdge - 6, 9, &quot;+&quot;); rightEdge -= 8; }
+  if (timeValid()) {
+    time_t n = time(nullptr);
+    strftime(buf, sizeof buf, &quot;%a %d&quot;, localtime(&amp;n));   // e.g. &quot;Wed 25&quot;
+    oled.drawStr(rightEdge - oled.getStrWidth(buf), 9, buf);
+  }
+  oled.drawHLine(0, 12, 128);                         // divider
+
+  drawFace(moodFace(true), 0, 14, 128, 50, touchHeld);
+  drawPetHearts(0, 14, 128, 50);
+}
+
+void screenClock() {
+  if (!timeValid()) {
+    oled.setFont(u8g2_font_6x10_tf);
+    oled.drawStr(8, 28, &quot;Time not set&quot;);
+    oled.drawStr(8, 44, &quot;Check WiFi in code&quot;);
+    return;
+  }
+  time_t n = time(nullptr); struct tm* tm = localtime(&amp;n);
+  char hm[8], ap[4], date[20];
+  strftime(hm, sizeof hm, &quot;%I:%M&quot;, tm);
+  strftime(ap, sizeof ap, &quot;%p&quot;, tm);
+  strftime(date, sizeof date, &quot;%a %d %b&quot;, tm);
+  oled.setFont(u8g2_font_logisoso32_tn);
+  oled.drawStr(4, 40, hm);
+  oled.setFont(u8g2_font_7x14B_tf);
+  oled.drawStr(106, 40, ap);
+  oled.setFont(u8g2_font_6x10_tf);
+  oled.drawStr(4, 58, date);
+  if ((n % 2) == 0) oled.drawDisc(120, 54, 2);       // seconds tick
+}
+
+void screenStopwatch() {
+  uint32_t ms = swTime();
+  unsigned long mins = (ms / 60000) % 100, secs = (ms / 1000) % 60, cs = (ms / 10) % 100;
+  char buf[12];
+
+  oled.setFont(u8g2_font_6x10_tf);
+  oled.drawStr(2, 9, &quot;STOPWATCH&quot;);
+  const char* st = swRunning ? &quot;RUN&quot; : (ms ? &quot;PAUSE&quot; : &quot;READY&quot;);
+  oled.drawStr(126 - oled.getStrWidth(st), 9, st);
+  oled.drawHLine(0, 12, 128);
+
+  snprintf(buf, sizeof buf, &quot;%02lu:%02lu&quot;, mins, secs);
+  oled.setFont(u8g2_font_logisoso32_tn);
+  oled.drawStr(4, 50, buf);
+  snprintf(buf, sizeof buf, &quot;.%02lu&quot;, cs);
+  oled.setFont(u8g2_font_7x14B_tf);
+  oled.drawStr(102, 50, buf);
+
+  oled.setFont(u8g2_font_5x7_tf);
+  oled.drawStr(2, 63, &quot;2x:start/stop hold:reset&quot;);
+}
+
+void screenBattery() {
+  if (batPct &lt; 0) {
+    oled.setFont(u8g2_font_6x10_tf);
+    oled.drawStr(10, 28, &quot;No battery sensor&quot;);
+    oled.drawStr(10, 44, &quot;(add 2 resistors)&quot;);
+    return;
+  }
+  drawBatteryIcon(20, 10, 82, 30, batPct);
+  char buf[24];
+  oled.setFont(u8g2_font_7x14B_tf);
+  snprintf(buf, sizeof buf, &quot;%d%%  %.2fV&quot;, batPct, batV);
+  oled.drawStr(20, 56, buf);
+  if (usbIn) { oled.setFont(u8g2_font_6x10_tf); oled.drawStr(36, 30, &quot;CHARGING&quot;); }
+}
+
+void screenFaces() {
+  drawFace(moodFace(false), 0, 0, 128, 64, touchHeld);
+  drawPetHearts(0, 0, 128, 64);
+}
+
+// ------------------------- MAIN -------------------------
+void bootSplash() {
+  for (int f = 0; f &lt; 3; f++) {                     // dino runs in, then title
+    oled.clearBuffer();
+    oled.drawHLine(0, GROUND_Y, 128);
+    drawDino(10 + f * 4, GROUND_Y - DINO_H, f &lt; 2);
+    oled.setFont(u8g2_font_logisoso16_tr);
+    const char* name = &quot;DINO KEY&quot;;
+    oled.drawStr((128 - oled.getStrWidth(name)) / 2, 30, name);
+    oled.setFont(u8g2_font_5x7_tf);
+    oled.drawStr(78, 54, &quot;v1.0&quot;);
+    oled.sendBuffer();
+    delay(500);
+  }
+}
+
+void setup() {
+  pinMode(PIN_TOUCH, INPUT);
+#if PIN_USB &gt;= 0
+  pinMode(PIN_USB, INPUT);
+#endif
+  analogReadResolution(12);
+  oled.begin();
+  oled.setContrast(180);
+  randomSeed(esp_random());
+
+  setenv(&quot;TZ&quot;, TZ_INFO, 1); tzset();               // keep time zone after deep sleep
+  bool coldBoot = esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_UNDEFINED;
+  if (coldBoot) bootSplash();                      // name screen on power-on
+  if (coldBoot || !timeValid()) syncTimeWiFi();
+
+  uint32_t t0 = millis();
+  while (digitalRead(PIN_TOUCH) &amp;&amp; millis() - t0 &lt; 2000) delay(10);  // ignore wake touch
+  readBattery();
+  lastActivity = millis();
+}
+
+void handleGesture(Gesture g, uint32_t t) {
+  if (g == G_NONE) return;
+  if (g == G_SLEEP) { goToSleep(); return; }
+
+  // Dino: while playing, touch = jump and nothing else
+  if (mode == M_DINO &amp;&amp; dinoPlaying) { if (g == G_PRESS) dinoJump(); return; }
+  if (mode == M_DINO &amp;&amp; t - dinoOverAt &lt; 800) return;   // ignore taps right after crash
+
+  switch (g) {
+    case G_TAP:
+      mode = (mode + 1) % MODE_COUNT;
+      modeBannerUntil = t + 700;
+      break;
+
+    case G_DOUBLE:
+      if (mode == M_HOME || mode == M_FACES) faceIdx = (faceIdx + 1) % (FACE_COUNT - 1);
+      else if (mode == M_STOPWATCH) swToggle();
+      else if (mode == M_DINO) dinoStart();
+      else { blinking = true; blinkEndAt = t + 140; }
+      break;
+
+    case G_HOLD_START:
+      if (mode == M_HOME || mode == M_FACES) petCount++;
+      else if (mode == M_STOPWATCH) swReset();
+      break;
+
+    case G_HOLD_END:
+      if (mode == M_HOME || mode == M_FACES) happyUntil = t + 3000;   // happy after petting
+      break;
+
+    default: break;
+  }
+}
+
+void loop() {
+  uint32_t t = millis();
+  Gesture g = readTouch();
+  if (g != G_NONE) lastActivity = t;
+  handleGesture(g, t);
+
+  bool busy = swRunning || dinoPlaying || usbIn;
+  if (!busy &amp;&amp; t - lastActivity &gt; AUTO_SLEEP_MS) goToSleep();
+  if (t - lastBatRead &gt; 2000) { readBattery(); lastBatRead = t; }
+  updateBlink();
+  if (mode == M_DINO &amp;&amp; dinoPlaying) dinoUpdate();
+
+  oled.clearBuffer();
+  if (t &lt; modeBannerUntil) {
+    oled.setFont(u8g2_font_7x14B_tf);
+    int w = oled.getStrWidth(MODE_NAMES[mode]);
+    oled.drawStr((128 - w) / 2, 38, MODE_NAMES[mode]);
+  } else {
+    switch (mode) {
+      case M_HOME:      screenHome();      break;
+      case M_CLOCK:     screenClock();     break;
+      case M_STOPWATCH: screenStopwatch(); break;
+      case M_DINO:      screenDino();      break;
+      case M_FACES:     screenFaces();     break;
+      case M_BATTERY:   screenBattery();   break;
+    }
+  }
+  oled.sendBuffer();
+  delay(10);
+}
+</code></pre>
+</div></section>
+
+<footer class="band" style="padding-top:0"><div class="wrap">Dino Key keychain · ESP32-C3 SuperMini build notes. Screen renders are simulated in the browser.</div></footer>
+
+<script>
+{
+const PX='#bfefff';
+let g;
+const MODES=['HOME','CLOCK','STOPWATCH','DINO RUN','FACES','BATTERY'];
+const FACES=[['Neutral','open','open','flat'],['Happy','happy','happy','smile'],['Excited','round','round','grin'],['Wink','open','closed','smile'],['Laugh','happy','happy','grin'],['Sleepy','sleepy','sleepy','flat'],['Surprised','round','round','o'],['Sad','sad','sad','frown'],['Angry','angry','angry','frown'],['Love','heart','heart','smile'],['Cool','shades','shades','smile'],['Error','x','x','flat'],['Sleeping','closed','closed','none']];
+
+function rr(x,y,w,h,r){g.beginPath();if(g.roundRect)g.roundRect(x,y,w,h,r);else g.rect(x,y,w,h);g.fill();}
+function disc(x,y,r){g.beginPath();g.arc(x,y,r,0,7);g.fill();}
+function eye(st,t,cx,cy,ew,eh,s){
+  const l=cx-ew/2,top=cy-eh/2,inX=cx-s*ew/2,outX=cx+s*ew/2;
+  if(st.blink&&['open','round','sad','angry'].includes(t))t='closed';
+  g.fillStyle=PX;g.strokeStyle=PX;g.lineWidth=3;
+  if(t==='open')rr(l,top,ew,eh,Math.min(ew,eh)/4);
+  else if(t==='closed')g.fillRect(l,cy,ew,3);
+  else if(t==='happy'){g.beginPath();g.moveTo(l,cy+eh/4+1);g.lineTo(cx,cy-eh/4+1);g.lineTo(l+ew,cy+eh/4+1);g.stroke();}
+  else if(t==='sad'||t==='angry'||t==='sleepy'){rr(l,top,ew,eh,Math.min(ew,eh)/4);g.fillStyle='#000';g.beginPath();
+    if(t==='sad'){g.moveTo(inX,top-1);g.lineTo(outX+s,top-1);g.lineTo(outX+s,top+eh/2);}
+    else if(t==='angry'){g.moveTo(outX,top-1);g.lineTo(inX-s,top-1);g.lineTo(inX-s,top+eh/2);}
+    else g.rect(l-1,top-1,ew+2,eh/2+1);
+    g.fill();}
+  else if(t==='heart'){const r=Math.max(2,ew/4);disc(cx-r,cy-r/2,r);disc(cx+r,cy-r/2,r);g.beginPath();g.moveTo(cx-2*r-1,cy-r/2+1);g.lineTo(cx+2*r+1,cy-r/2+1);g.lineTo(cx,cy+eh/2);g.fill();}
+  else if(t==='x'){g.beginPath();g.moveTo(l,top);g.lineTo(l+ew,top+eh);g.moveTo(l+ew,top);g.lineTo(l,top+eh);g.stroke();}
+  else if(t==='round'){const r=Math.min(ew,eh)/2;disc(cx,cy,r);g.fillStyle='#000';disc(cx+r/3,cy-r/3,Math.max(1,r/3));}
+  else if(t==='shades')g.fillRect(l-2,cy-eh/4,ew+4,eh/2+2);
+}
+function mouth(t,cx,cy,mw){
+  const rx=Math.max(2,mw/2),ry=Math.max(2,mw/4);g.fillStyle=PX;g.strokeStyle=PX;g.lineWidth=2;
+  if(t==='smile'){g.beginPath();g.ellipse(cx,cy,rx,ry,0,0,Math.PI);g.stroke();}
+  else if(t==='frown'){g.beginPath();g.ellipse(cx,cy+ry,rx,ry,0,Math.PI,2*Math.PI);g.stroke();}
+  else if(t==='flat')g.fillRect(cx-mw/3,cy+1,2*mw/3,2);
+  else if(t==='o'){g.beginPath();g.ellipse(cx,cy+2,Math.max(2,mw/5),ry+1,0,0,7);g.fill();}
+  else if(t==='grin'){g.beginPath();g.ellipse(cx,cy,rx,ry+2,0,0,Math.PI);g.fill();}
+}
+function smallHeart(x,y){g.fillStyle=PX;disc(x-2,y,2);disc(x+2,y,2);g.beginPath();g.moveTo(x-4,y+1);g.lineTo(x+4,y+1);g.lineTo(x,y+5);g.fill();}
+function txt(s,x,y,size,bold,align){g.fillStyle=PX;g.font=(bold?'bold ':'')+size+'px "IBM Plex Mono",monospace';g.textAlign=align||'left';g.fillText(s,x,y);g.textAlign='left';}
+function drawFace(st,i,ox,oy,W,H,blush){
+  const f=FACES[i],ew=W*.2,eh=H*.4,ey=oy+H*.38,eL=ox+W/2-W*.22,eR=ox+W/2+W*.22;
+  eye(st,f[1],eL,ey,ew,eh,-1);eye(st,f[2],eR,ey,ew,eh,1);
+  if(f[1]==='shades')g.fillRect(eL+ew/2,ey-eh/4,eR-eL-ew,2);
+  mouth(f[3],ox+W/2,oy+H*.72,W*.18);
+  if(blush){g.strokeStyle=PX;g.lineWidth=1;const by=ey+eh/2+3;g.beginPath();
+    for(let k=0;k<3;k++){g.moveTo(eL-ew/2-4+k*4,by+3);g.lineTo(eL-ew/2-2+k*4,by);g.moveTo(eR+ew/2-6+k*4,by+3);g.lineTo(eR+ew/2-4+k*4,by);}g.stroke();}
+  if(i===12){txt('z',ox+W-22,oy+12,9);txt('Z',ox+W-14,oy+8,9);}
+}
+function hearts(st,now,ox,oy,W,H){if(!st.held)return;const xs=[ox+8,ox+W-9,ox+W-24];
+  for(let k=0;k<3;k++){const y=oy+H-6-((Math.floor(now/25)+k*17)%H);if(y>oy+2)smallHeart(xs[k],y);}}
+function mood(st,now,lonely){
+  if(st.held)return 9;if(now<st.happyUntil)return 4;if(lonely&&now-st.lastAct>60000)return 7;return st.face;}
+const p2=n=>String(n).padStart(2,'0');
+function hm(d){return p2(d.getHours()%12||12)+':'+p2(d.getMinutes());}
+const ap=d=>d.getHours()<12?'AM':'PM';
+const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function drawDino(x,y,run,now){g.fillStyle=PX;g.fillRect(x+5,y,6,4);g.fillStyle='#000';g.fillRect(x+9,y+1,1,1);g.fillStyle=PX;
+  g.fillRect(x+2,y+3,6,6);g.fillRect(x,y+4,2,2);g.fillRect(x+8,y+5,1,1);const s=run&&Math.floor(now/100)%2;
+  g.fillRect(x+3,y+9,2,s?1:2);g.fillRect(x+6,y+9,2,s?2:1);}
+function drawCactus(c){const x=Math.round(c.x);g.fillStyle=PX;g.fillRect(x,56-c.h,c.w,c.h);if(c.h>10){g.fillRect(x-2,56-c.h+4,2,3);g.fillRect(x+c.w,56-c.h+2,2,3);}}
+
+function render(ctx,st,now){
+  g=ctx;g.fillStyle='#000';g.fillRect(0,0,128,64);
+  if(st.asleep)return;
+  if(st.sleepAt){drawFace(st,12,0,0,128,64);return;}
+  if(st.splash){g.fillStyle=PX;g.fillRect(0,56,128,1);drawDino(18,45,true,now);txt('DINO KEY',64,31,17,true,'center');txt('v1.0',78,54,8);return;}
+  const d=new Date();
+  if(now<st.banner){txt(MODES[st.mode],64,38,13,true,'center');return;}
+  const m=st.mode;
+  if(m===0){txt(hm(d)+' '+ap(d),2,9,10);txt(DAYS[d.getDay()]+' '+p2(d.getDate()),126,9,10,false,'right');
+    g.fillStyle=PX;g.fillRect(0,12,128,1);drawFace(st,mood(st,now,true),0,14,128,50,st.held);hearts(st,now,0,14,128,50);}
+  else if(m===1){txt(hm(d),3,40,30,true);txt(ap(d),106,40,12,true);txt(DAYS[d.getDay()]+' '+p2(d.getDate())+' '+MON[d.getMonth()],4,58,10);
+    if(d.getSeconds()%2===0){g.fillStyle=PX;disc(120,54,2);}}
+  else if(m===2){const sw=st.sw,ms=sw.el+(sw.run?now-sw.start:0);
+    txt('STOPWATCH',2,9,10);txt(sw.run?'RUN':(ms?'PAUSE':'READY'),126,9,10,false,'right');g.fillStyle=PX;g.fillRect(0,12,128,1);
+    txt(p2(Math.floor(ms/60000)%100)+':'+p2(Math.floor(ms/1000)%60),3,50,30,true);txt('.'+p2(Math.floor(ms/10)%100),100,50,12,true);
+    txt('2x:start/stop hold:reset',2,63,8);}
+  else if(m===3){const D=st.dino;g.fillStyle=PX;g.fillRect(0,56,128,1);
+    for(let gx=-(Math.floor(D.shift)%16);gx<128;gx+=16)g.fillRect(gx+5,59,1,1);
+    txt('HI '+String(D.best).padStart(5,'0')+'  '+String(D.score).padStart(5,'0'),127,7,8,false,'right');
+    if(D.play){drawDino(10,56-11-Math.round(D.y),D.y===0,now);D.c.forEach(c=>{if(c.x<128)drawCactus(c)});}
+    else{drawDino(10,45,false,now);txt(D.over?'GAME OVER':'DINO RUN',64,28,13,true,'center');txt('2x tap: play',64,42,9,false,'center');}}
+  else if(m===4){drawFace(st,mood(st,now,false),0,0,128,64,st.held);hearts(st,now,0,0,128,64);}
+  else {txt('No battery sensor',8,28,10);txt('(add 2 resistors)',8,44,10);}
+}
+
+function newState(o){return Object.assign({mode:0,face:1,blink:false,held:false,happyUntil:0,lastAct:Date.now(),banner:0,asleep:false,sleepAt:0,
+  sw:{run:false,start:0,el:0},dino:{play:false,score:0,best:0,over:0,y:0,vy:0,dist:0,shift:0,c:[{x:200,w:5,h:10},{x:300,w:6,h:13}]}},o||{});}
+
+/* ---------- live device ---------- */
+const S=newState();
+const live=document.getElementById('live').getContext('2d');
+const T={now:false,last:false,downAt:0,lastUp:0,taps:0,hold:false,sleep:false,ignore:false};
+function readTouch(t){let r=null;const n=T.now;
+  if(n&&!T.last){T.downAt=t;T.hold=T.sleep=false;r='press';}
+  else if(n&&!T.hold&&t-T.downAt>600){T.hold=true;T.taps=0;r='holdStart';}
+  else if(n&&T.hold&&!T.sleep&&t-T.downAt>3000){T.sleep=true;r='sleep';}
+  else if(!n&&T.last){if(T.hold)r='holdEnd';else if(t-T.downAt>30){T.taps++;T.lastUp=t;}
+    if(T.ignore){T.ignore=false;T.taps=0;r=null;S.held=false;T.last=n;return null;}}
+  else if(T.taps&&!n&&t-T.lastUp>300){r=T.taps>=2?'double':'tap';T.taps=0;}
+  T.last=n;return r;}
+const D=S.dino;
+function speed(){return Math.min(160,60+D.score*.15);}
+function place(c,after){c.x=after+speed()*.6+25+Math.random()*50;c.w=4+Math.floor(Math.random()*4);c.h=8+Math.floor(Math.random()*7);}
+function dinoStart(){D.play=true;D.score=0;D.dist=0;D.y=0;D.vy=0;D.c[0].x=0;place(D.c[0],100);place(D.c[1],D.c[0].x);}
+function handle(ev,t){
+  if(!ev)return;S.lastAct=t;
+  if(S.asleep||S.sleepAt){if(ev==='press'&&S.asleep){S.asleep=false;T.ignore=true;}return;}
+  if(ev==='holdStart'&&!(S.mode===3&&D.play))S.held=(S.mode===0||S.mode===4);
+  if(ev==='holdEnd'){const was=S.held;S.held=false;if(was)S.happyUntil=t+3000;return;}
+  if(ev==='sleep'){S.held=false;S.sleepAt=t;S.sw.run&&(S.sw.el+=t-S.sw.start,S.sw.run=false);D.play=false;return;}
+  if(S.mode===3&&D.play){if(ev==='press'&&D.y===0)D.vy=230;return;}
+  if(S.mode===3&&t-D.over<800)return;
+  if(ev==='tap'){S.mode=(S.mode+1)%6;S.banner=t+700;}
+  else if(ev==='double'){if(S.mode===0||S.mode===4)S.face=(S.face+1)%12;
+    else if(S.mode===2){const w=S.sw;if(w.run){w.el+=t-w.start;w.run=false;}else{w.start=t;w.run=true;}}
+    else if(S.mode===3)dinoStart();else{S.blink=true;blinkEnd=t+140;}}
+  else if(ev==='holdStart'&&S.mode===2){S.sw.run=false;S.sw.el=0;}
+}
+let nextBlink=performance.now()+2000,blinkEnd=0,lastF=performance.now();
+const statusEl=document.getElementById('status');
+function frame(){
+  const t=performance.now();const now=Date.now();
+  handle(readTouch(t),t);
+  if(!S.blink&&t>nextBlink){S.blink=true;blinkEnd=t+140;}
+  if(S.blink&&t>blinkEnd){S.blink=false;nextBlink=t+2500+Math.random()*3500;}
+  if(S.sleepAt&&t-S.sleepAt>1000){S.sleepAt=0;S.asleep=true;}
+  let dt=Math.min(.05,(t-lastF)/1000);lastF=t;
+  if(S.mode===3&&D.play){
+    if(D.y>0||D.vy>0){D.vy-=900*dt;D.y+=D.vy*dt;if(D.y<=0){D.y=0;D.vy=0;}}
+    const sp=speed();D.dist+=sp*dt;D.score=Math.floor(D.dist/5);D.shift+=sp*dt;
+    for(const c of D.c){c.x-=sp*dt;if(c.x+c.w<0)place(c,Math.max(D.c[0].x,D.c[1].x));
+      const top=56-11-Math.round(D.y)+2,bot=56-Math.round(D.y);
+      if(12<c.x+c.w&&19>c.x&&bot>56-c.h&&top<56){D.play=false;D.over=t;D.best=Math.max(D.best,D.score);}}
+  }
+  const tr={...S,banner:S.banner?S.banner-t+now:0,happyUntil:S.happyUntil?S.happyUntil-t+now:0,lastAct:S.lastAct-t+now,
+    sw:{...S.sw,start:S.sw.start-t+now}};
+  render(live,tr,now);
+  statusEl.textContent=S.asleep?'Sleeping · touch to wake':S.sleepAt?'Going to sleep…':'Mode: '+MODES[S.mode]+(S.held?' · being petted':'')+(S.mode===3&&D.play?' · score '+D.score:'');
+  requestAnimationFrame(frame);
+}
+const pad=document.getElementById('pad');
+const down=e=>{e.preventDefault();T.now=true;pad.classList.add('on');handle(readTouch(performance.now()),performance.now());};
+const up=()=>{if(!T.now)return;T.now=false;pad.classList.remove('on');handle(readTouch(performance.now()),performance.now());};
+pad.addEventListener('pointerdown',e=>{pad.setPointerCapture&&pad.setPointerCapture(e.pointerId);down(e);});
+pad.addEventListener('pointerup',up);pad.addEventListener('pointercancel',up);
+pad.addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter')&&!e.repeat)down(e);});
+pad.addEventListener('keyup',e=>{if(e.key===' '||e.key==='Enter')up();});
+document.addEventListener('keydown',e=>{if(e.key===' '&&e.target===document.body&&!e.repeat)down(e);});
+document.addEventListener('keyup',e=>{if(e.key===' '&&e.target===document.body)up();});
+requestAnimationFrame(frame);
+
+/* ---------- gallery ---------- */
+const SHOTS=[
+  ['Startup','Shown each time you switch it on: the dino runs in under the name.',{splash:true}],
+  ['Home','Time and date in the top bar, the face below. It blinks on its own.',{mode:0,face:1}],
+  ['Home, being petted','Hold the sensor: heart eyes, blush and floating hearts.',{mode:0,held:true}],
+  ['Home, ignored','No touch for a minute and it gets sad.',{mode:0,lastAct:Date.now()-120000}],
+  ['Clock','Big 12-hour time with day and date. The dot ticks every second.',{mode:1}],
+  ['Stopwatch','Minutes, seconds and hundredths. Double tap to start or pause.',{mode:2,sw:{run:false,start:0,el:83450}}],
+  ['Dino Run','Touch to jump the cactus. It speeds up as you score.',{mode:3,dino:{play:true,score:142,best:388,over:0,y:14,vy:0,dist:710,shift:40,c:[{x:34,w:6,h:12},{x:104,w:5,h:9}]}}],
+  ['Faces: Cool','Double tap through 12 faces.',{mode:4,face:10}],
+  ['Faces: Surprised','Each face is drawn from simple shapes.',{mode:4,face:6}],
+  ['Battery','Shows a note until you add the two resistors.',{mode:5}],
+  ['Sleep','Hold 3 seconds: it closes its eyes, then the screen turns off.',{sleepAt:1}],
+];
+const shotsEl=document.getElementById('shots');
+shotsEl.innerHTML=SHOTS.map((s,i)=>'<figure class="shot" style="margin:0"><div class="glass"><canvas class="oled" width="128" height="64" id="shot'+i+'"></canvas></div><h3>'+s[0]+'</h3><p>'+s[1]+'</p></figure>').join('');
+const shotStates=SHOTS.map(s=>newState(s[2]));
+function drawShots(){const now=Date.now();shotStates.forEach((st,i)=>render(document.getElementById('shot'+i).getContext('2d'),st,now));}
+drawShots();setInterval(drawShots,200);
+
+/* ---------- parts ---------- */
+const PARTS=[
+  ['ESP32-C3 SuperMini','The brain. Wi-Fi for the clock, deep sleep for battery life.',
+   '<rect x="30" y="14" width="60" height="96" rx="5" fill="#1d2a52"/><rect x="48" y="6" width="24" height="14" rx="3" fill="#b9c2c9"/><rect x="44" y="48" width="32" height="32" rx="2" fill="#0e1220"/><rect x="36" y="24" width="12" height="8" rx="1" fill="#d8dde2"/><rect x="72" y="24" width="12" height="8" rx="1" fill="#d8dde2"/>'+Array.from({length:8},(_,k)=>'<circle cx="34" cy="'+(40+k*9)+'" r="2.5" fill="#e2b25a"/><circle cx="86" cy="'+(40+k*9)+'" r="2.5" fill="#e2b25a"/>').join('')],
+  ['1.3 inch OLED (SH1106)','128×64 pixels, I2C. Draws the faces, clock and game.',
+   '<rect x="12" y="18" width="96" height="88" rx="5" fill="#16324f"/><rect x="18" y="30" width="84" height="56" rx="2" fill="#000"/><rect x="34" y="46" width="14" height="16" rx="3" fill="#7fe3ff"/><rect x="72" y="46" width="14" height="16" rx="3" fill="#7fe3ff"/><path d="M52 72q8 6 16 0" stroke="#7fe3ff" stroke-width="3" fill="none"/>'+[38,52,66,80].map(x=>'<circle cx="'+x+'" cy="24" r="2.5" fill="#e2b25a"/>').join('')],
+  ['TTP223 touch sensor','Capacitive pad. Works through thin plastic, so the case can be sealed.',
+   '<rect x="28" y="24" width="64" height="76" rx="6" fill="#b8352f"/><circle cx="60" cy="56" r="22" fill="#e6c59a" stroke="#a8875e" stroke-width="2"/>'+[46,60,74].map(x=>'<circle cx="'+x+'" cy="92" r="2.5" fill="#e2b25a"/>').join('')],
+  ['LiPo battery 3.7 V 350 mAh','Roughly a day or more of normal use, weeks asleep.',
+   '<rect x="18" y="30" width="84" height="56" rx="8" fill="#c7ced4" stroke="#8b959d"/><rect x="18" y="30" width="16" height="56" rx="6" fill="#aeb6bd"/><text x="66" y="63" text-anchor="middle" font-size="12" font-weight="700" fill="#2b333a" font-family="IBM Plex Sans, Arial, sans-serif">350mAh</text><path d="M22 44H8M22 54H8" stroke-width="3" stroke="#d23b3b"/><path d="M22 54H8" stroke-width="3" stroke="#222"/>'],
+  ['TP4056 charger','USB charging for the LiPo, with protection on most modules.',
+   '<rect x="20" y="34" width="86" height="52" rx="4" fill="#1f4f8f"/><rect x="10" y="46" width="20" height="28" rx="4" fill="#b9c2c9"/><rect x="52" y="48" width="20" height="24" rx="2" fill="#0e1220"/><circle cx="86" cy="46" r="3.5" fill="#e24b4a"/><circle cx="86" cy="58" r="3.5" fill="#3fbf6f"/>'+[[98,42],[98,78],[40,82],[60,82]].map(p=>'<circle cx="'+p[0]+'" cy="'+p[1]+'" r="2.5" fill="#e2b25a"/>').join('')],
+  ['Slide switch','Cuts battery power completely when off.',
+   '<rect x="24" y="44" width="72" height="30" rx="4" fill="#24292e"/><rect x="34" y="34" width="24" height="18" rx="3" fill="#cfd6dc"/>'+[40,60,80].map(x=>'<rect x="'+(x-2)+'" y="74" width="4" height="18" fill="#c9a86a"/>').join('')],
+];
+document.getElementById('partsGrid').innerHTML=PARTS.map(p=>'<article class="card part"><svg viewBox="0 0 120 120" aria-hidden="true">'+p[2]+'</svg><h3>'+p[0]+'</h3><p>'+p[1]+'</p></article>').join('');
+
+/* ---------- wiring rows ---------- */
+const WIRES=[['OLED VCC','ESP32 3V3'],['OLED GND','ESP32 GND'],['OLED SDA','ESP32 GPIO 6'],['OLED SCL','ESP32 GPIO 7'],['Touch VCC','ESP32 3V3'],['Touch GND','ESP32 GND'],['Touch I/O','ESP32 GPIO 3'],['Battery red (+)','Charger B+'],['Battery black (−)','Charger B−'],['Charger OUT+','Switch middle pin'],['Switch side pin','ESP32 5V'],['Charger OUT−','ESP32 GND']];
+document.getElementById('wireRows').innerHTML=WIRES.map(w=>'<tr><td>'+w[0]+'</td><td>'+w[1]+'</td></tr>').join('');
+
+/* ---------- copy ---------- */
+const cb=document.getElementById('copyBtn');
+cb.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(document.getElementById('codeText').textContent);cb.textContent='Copied';}catch(e){cb.textContent='Select the code and copy';}setTimeout(()=>cb.textContent='Copy code',2000);});
+}
+</script>
+</body>
+</html>
